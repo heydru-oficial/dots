@@ -14,7 +14,7 @@ My terminal setup, in one script. macOS only.
 ## Install
 
 ```sh
-git clone https://github.com/edutrul/dots.git
+git clone https://github.com/heydru-oficial/dots.git
 cd dots
 ./install.sh
 ```
