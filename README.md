@@ -9,6 +9,7 @@ My terminal setup, in one script. macOS only.
 - [Neovim](https://neovim.io) + [kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim),
   the official minimal starter config
 - A Nerd Font ([Hack Nerd Font Mono](https://www.nerdfonts.com)) wired into Terminal.app
+- [Claude Code](https://claude.com/claude-code) and [Codex](https://github.com/openai/codex) CLIs
 - A curated set of [herdr](https://herdr.dev) plugins — see below
 
 ## Install
@@ -19,7 +20,7 @@ cd dots
 ./install.sh
 ```
 
-Flags: `--skip-herdr`, `--skip-nvim`, `--skip-font`. Safe to re-run — every step
+Flags: `--skip-herdr`, `--skip-nvim`, `--skip-font`, `--skip-agents`. Safe to re-run — every step
 checks for existing state before touching it, and it backs up your existing
 `~/.config/starship.toml` if one differs from the one in this repo.
 

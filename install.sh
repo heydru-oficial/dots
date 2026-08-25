@@ -7,16 +7,19 @@ set -euo pipefail
 SKIP_HERDR=0
 SKIP_NVIM=0
 SKIP_FONT=0
+SKIP_AGENTS=0
 for arg in "$@"; do
   case "$arg" in
     --skip-herdr) SKIP_HERDR=1 ;;
     --skip-nvim) SKIP_NVIM=1 ;;
     --skip-font) SKIP_FONT=1 ;;
+    --skip-agents) SKIP_AGENTS=1 ;;
     -h|--help)
-      echo "Usage: $0 [--skip-herdr] [--skip-nvim] [--skip-font]"
-      echo "  --skip-herdr  don't touch herdr plugins (unvetted community registry)"
-      echo "  --skip-nvim   don't install Neovim / kickstart.nvim"
-      echo "  --skip-font   don't touch Terminal.app's font setting"
+      echo "Usage: $0 [--skip-herdr] [--skip-nvim] [--skip-font] [--skip-agents]"
+      echo "  --skip-herdr   don't touch herdr plugins (unvetted community registry)"
+      echo "  --skip-nvim    don't install Neovim / kickstart.nvim"
+      echo "  --skip-font    don't touch Terminal.app's font setting"
+      echo "  --skip-agents  don't install Claude Code / Codex CLIs"
       exit 0
       ;;
   esac
@@ -60,6 +63,21 @@ brew install eza ripgrep fd rust >/dev/null
 
 log "Installing a Nerd Font (Hack Nerd Font Mono) if missing"
 brew list --cask font-hack-nerd-font >/dev/null 2>&1 || brew install --cask font-hack-nerd-font
+
+if [[ "$SKIP_AGENTS" -eq 0 ]]; then
+  if command -v claude >/dev/null; then
+    log "claude already on PATH ($(command -v claude)), leaving it alone"
+  else
+    log "Installing Claude Code"
+    brew install claude-code >/dev/null
+  fi
+  if command -v codex >/dev/null; then
+    log "codex already on PATH ($(command -v codex)), leaving it alone"
+  else
+    log "Installing Codex"
+    brew install --cask codex
+  fi
+fi
 
 log "Writing ~/.config/starship.toml"
 mkdir -p ~/.config
