@@ -1,0 +1,15 @@
+# herdr plugins this setup links, one per line: owner/repo[:manifest-subpath]
+# manifest-subpath is only needed when herdr-plugin.toml isn't at the repo root.
+#
+# These come from herdr's community plugin registry (https://herdr.dev/plugins/),
+# which is UNVETTED — anyone can publish by tagging a repo `herdr-plugin`. Read
+# each one before you run this, the same way you'd read any dotfiles script.
+alexarthurs/herdr-sidebar:plugins/herdr-sidebar
+levi-qiao/herdr-agent-quota
+aigorahub/herdr-lantern
+JonasBaeumer/herdr-file-annotator
+qu8n/herdr-automatic-rename
+ragamo/herdr-flock
+ChmaraX/herdr-nvim
+paulbkim-dev/vim-herdr-navigation
+osolmaz/ghzinga:plugins/herdr

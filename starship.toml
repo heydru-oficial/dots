@@ -1,0 +1,97 @@
+format = """
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+${custom.drupal}\
+${custom.bash}\
+$nodejs\
+$python\
+$php\
+$java\
+$ruby\
+$rlang\
+$rust\
+$golang
+$character"""
+
+add_newline = false
+
+palette = "gentleman"
+
+[palettes.gentleman]
+text = "#F3F6F9"
+red = "#CB7C94"
+green = "#B7CC85"
+yellow = "#FFE066"
+blue = "#7FB4CA"
+mauve = "#A3B5D6"
+pink = "#FF8DD7"
+teal = "#7AA89F"
+peach = "#DEBA87"
+subtext0 = "#5C6170"
+overlay0 = "#232A40"
+lavender = "#B99BF2"
+
+[hostname]
+ssh_only = false
+format = "[$hostname](bold blue) "
+style = "bold blue"
+
+[directory]
+format = "[$path](bold blue) "
+style = "bold blue"
+truncation_length = 1
+truncate_to_repo = true
+
+[git_branch]
+symbol = " "
+format = "on [$symbol$branch](bold mauve) "
+style = "bold mauve"
+
+[git_status]
+format = "[$all_status$ahead_behind](bold pink) "
+
+[nodejs]
+symbol = "⬢ "
+format = "via [$symbol($version)](bold green) "
+style = "bold green"
+
+[python]
+format = "via [🐍 $version](bold yellow) "
+
+[php]
+format = "via [🐘 $version](bold peach) "
+
+[java]
+format = "via [☕ $version](bold red) "
+
+[custom.drupal]
+command = "true"
+when = '''test -f composer.json && grep -q "drupal/core" composer.json || test -f core/lib/Drupal.php || test -f web/core/lib/Drupal.php'''
+symbol = "💧"
+format = "via [$symbol Drupal](bold blue) "
+
+[custom.bash]
+command = "true"
+when = '''test -n "$(find . -maxdepth 1 -name '*.sh' -print -quit 2>/dev/null)"'''
+symbol = "🐚"
+format = "via [$symbol shell](bold text) "
+
+[ruby]
+symbol = "💎 "
+format = "via [$symbol($version)](bold red) "
+
+[rlang]
+symbol = "📊 "
+format = "via [$symbol($version)](bold blue) "
+
+[rust]
+format = "via [🦀 $version](bold red) "
+
+[golang]
+format = "via [🐹 $version](bold teal) "
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
