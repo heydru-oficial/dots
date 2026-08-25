@@ -10,7 +10,7 @@ My terminal setup, in one script. **macOS and Linux/Ubuntu** (including a bare V
   the official minimal starter config
 - A Nerd Font ([Hack Nerd Font Mono](https://www.nerdfonts.com)) wired into Terminal.app — **macOS only**, see below
 - [Claude Code](https://claude.com/claude-code) and [Codex](https://github.com/openai/codex) CLIs
-- A curated set of [herdr](https://herdr.dev) plugins — see below
+- [herdr](https://herdr.dev) itself, plus a curated set of its plugins — see below
 
 ## Install
 
@@ -66,11 +66,18 @@ locally (`herdr plugin link`) rather than through herdr's own remote
 installer, so you always have the exact cloned source on disk at
 `~/.local/share/herdr-plugins/` to read.
 
-`install.sh` doesn't install herdr itself — get it from
-[herdr.dev](https://herdr.dev) first (`curl -fsSL https://herdr.dev/install.sh | sh`,
-works on macOS and Linux). Without herdr on `PATH`, this whole section is skipped.
+`install.sh` installs herdr itself too, via its
+[official installer](https://herdr.dev) (`curl -fsSL https://herdr.dev/install.sh | sh`,
+no sudo, works on macOS and Linux) — skipped if `herdr` is already on `PATH`.
 
-Use `--skip-herdr` to get the prompt/`eza`/Neovim setup without touching any of this.
+**On a machine where herdr has never been run**, plugin *linking* still works (it's just
+file/registry setup), but `herdr-agent-quota`'s sidebar rows can't be configured until
+herdr's server is actually running — that step needs a live process to talk to. If
+`install.sh` prints a warning about this, run `herdr` once (just start it up), then run
+the one-line command it printed to finish that part.
+
+Use `--skip-herdr` to skip herdr and all of this — the prompt/`eza`/Neovim setup doesn't
+depend on any of it.
 
 ## What it doesn't do
 

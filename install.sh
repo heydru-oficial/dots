@@ -47,6 +47,10 @@ case "$(uname -s)" in
   *) echo "dots only supports macOS and Linux." >&2; exit 1 ;;
 esac
 
+# So a tool installed earlier in this same run (rustup, herdr, ...) is
+# immediately usable later in the same run, without waiting for a new shell.
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
 append_once() {
   local file="$1" snippet_file="$2"
   mkdir -p "$(dirname "$file")"
@@ -212,7 +216,11 @@ fi
 
 if [[ "$SKIP_HERDR" -eq 0 ]]; then
   if ! command -v herdr >/dev/null; then
-    warn "herdr isn't installed (https://herdr.dev — curl -fsSL https://herdr.dev/install.sh | sh) — skipping plugins"
+    log "Installing herdr (official installer, no sudo)"
+    curl -fsSL https://herdr.dev/install.sh | sh
+  fi
+  if ! command -v herdr >/dev/null; then
+    warn "herdr install didn't land on PATH — skipping plugins. Open a new shell and re-run to pick it up."
   else
     log "Linking herdr plugins from $REPO_DIR/herdr/plugins.txt"
     log "These come from herdr's UNVETTED community registry — review herdr/plugins.txt before trusting this step"
@@ -241,17 +249,22 @@ if [[ "$SKIP_HERDR" -eq 0 ]]; then
       log "linked $repo"
     done < "$REPO_DIR/herdr/plugins.txt"
 
-    if herdr plugin action invoke herdr-agent-quota.configure >/dev/null 2>&1; then
+    cargo install ghzinga --locked >/dev/null 2>&1 || warn "couldn't install the gzg CLI for ghzinga"
+    append_once ~/.config/herdr/config.toml "$REPO_DIR/herdr/config-snippet.toml"
+
+    if herdr status 2>/dev/null | grep -q "status: running"; then
       # configure --apply injects its own [ui.sidebar.agents] table with a
       # verbose default (topic/cache/5h/weekly rows). We only want a single
       # compact row per agent, and TOML forbids a second [ui.sidebar.agents]
       # table — so rewrite what it just wrote instead of appending our own.
-      python3 "$REPO_DIR/herdr/compact_agent_rows.py" ~/.config/herdr/config.toml || true
+      herdr plugin action invoke herdr-agent-quota.configure >/dev/null 2>&1 \
+        && python3 "$REPO_DIR/herdr/compact_agent_rows.py" ~/.config/herdr/config.toml
+      herdr server reload-config >/dev/null 2>&1 || true
+    else
+      warn "herdr isn't running yet, so the agent-quota sidebar rows and this new config can't be applied live."
+      warn "Run 'herdr' once to start it, then run:"
+      warn "  herdr plugin action invoke herdr-agent-quota.configure && python3 $REPO_DIR/herdr/compact_agent_rows.py ~/.config/herdr/config.toml && herdr server reload-config"
     fi
-    cargo install ghzinga --locked >/dev/null 2>&1 || warn "couldn't install the gzg CLI for ghzinga"
-
-    append_once ~/.config/herdr/config.toml "$REPO_DIR/herdr/config-snippet.toml"
-    herdr server reload-config >/dev/null 2>&1 || true
   fi
 fi
 
