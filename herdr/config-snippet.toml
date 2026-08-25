@@ -33,3 +33,15 @@ key = "prefix+o"
 type = "plugin_action"
 command = "chmarax.herdr-nvim.pick-file"
 description = "open file from agent output"
+
+[[keys.command]]
+key = "prefix+shift+r"
+type = "plugin_action"
+command = "herdr-agent-quota.refresh"
+description = "refresh all agent quotas"
+
+[[keys.command]]
+key = "prefix+i"
+type = "plugin_action"
+command = "flock.farm.open"
+description = "Open Flock Farm"
