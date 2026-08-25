@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# launchpad: eduardo's terminal setup (starship + eza + neovim + herdr plugins).
+# dots: eduardo's terminal setup (starship + eza + neovim + herdr plugins).
 # Idempotent — safe to re-run. Read this before you run it; it edits your
 # shell rc file and installs software via Homebrew/cargo.
 set -euo pipefail
@@ -23,14 +23,14 @@ for arg in "$@"; do
 done
 
 REPO_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-MARK_BEGIN="# >>> launchpad >>>"
-MARK_END="# <<< launchpad <<<"
+MARK_BEGIN="# >>> dots >>>"
+MARK_END="# <<< dots <<<"
 
 log() { printf '\033[1;34m==>\033[0m %s\n' "$1"; }
 warn() { printf '\033[1;33m!!\033[0m %s\n' "$1"; }
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
-  echo "launchpad currently only supports macOS." >&2
+  echo "dots currently only supports macOS." >&2
   exit 1
 fi
 if ! command -v brew >/dev/null; then
@@ -43,7 +43,7 @@ append_once() {
   mkdir -p "$(dirname "$file")"
   touch "$file"
   if grep -qF "$MARK_BEGIN" "$file" 2>/dev/null; then
-    log "$file already has the launchpad block, leaving it alone"
+    log "$file already has the dots block, leaving it alone"
     return
   fi
   {
@@ -52,7 +52,7 @@ append_once() {
     cat "$snippet_file"
     echo "$MARK_END"
   } >> "$file"
-  log "appended launchpad block to $file"
+  log "appended dots block to $file"
 }
 
 log "Installing Homebrew packages (eza, ripgrep, fd, rust)"

@@ -1,4 +1,4 @@
-# launchpad
+# dots
 
 My terminal setup, in one script. macOS only.
 
@@ -14,8 +14,8 @@ My terminal setup, in one script. macOS only.
 ## Install
 
 ```sh
-git clone https://github.com/<you>/launchpad.git
-cd launchpad
+git clone https://github.com/edutrul/dots.git
+cd dots
 ./install.sh
 ```
 
