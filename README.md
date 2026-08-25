@@ -76,6 +76,22 @@ herdr's server is actually running — that step needs a live process to talk to
 `install.sh` prints a warning about this, run `herdr` once (just start it up), then run
 the one-line command it printed to finish that part.
 
+### Local patches
+
+`herdr/patches/` holds small source patches applied to a plugin right after it's cloned,
+before it's built — for bugs/gaps found in a plugin that are worth fixing without waiting
+on upstream. Currently just `herdr-sidebar.patch`: it makes the "hide dotfiles" toggle
+(`.` key, or the ⚙ Settings modal) actually persist. Upstream, that setting lived only on
+the in-memory tree and reset to shown-by-default on every rebuild (e.g. whenever
+"follow pane folder" re-roots the tree) — this patch moves it into the plugin's own
+persisted settings file, the same place `color_theme`/`sidebar_width`/etc. already live,
+so it now survives exactly what it always claimed to. Verified against a fresh upstream
+clone: patch applies cleanly, all 196 tests pass (one new one added), `cargo clippy -- -D
+warnings` clean.
+
+If a patch fails to apply (upstream moved past what it expects), `install.sh` warns and
+falls back to the plugin unpatched rather than failing the whole run.
+
 Use `--skip-herdr` to skip herdr and all of this — the prompt/`eza`/Neovim setup doesn't
 depend on any of it.
 

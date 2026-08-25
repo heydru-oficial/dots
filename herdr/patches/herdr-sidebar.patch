@@ -1,0 +1,135 @@
+diff --git a/plugins/herdr-sidebar/src/explorer_app.rs b/plugins/herdr-sidebar/src/explorer_app.rs
+index 4c997d3..2ee16ee 100644
+--- a/plugins/herdr-sidebar/src/explorer_app.rs
++++ b/plugins/herdr-sidebar/src/explorer_app.rs
+@@ -297,6 +297,13 @@ impl App {
+         cwd_follower: std::rc::Rc<std::cell::RefCell<herdr_sidebar::launch::CwdFollower>>,
+     ) -> Self {
+         let mut tree = Tree::new(root);
++        let sidebar_state = sidebar::load_state();
++        // show_hidden lives on Tree (it's read on every rows() call, same
++        // as the rest of the tree-filtering logic), but the PREFERENCE is
++        // sidebar-wide and persisted — apply it before the first rows()
++        // below, or a freshly rebuilt tree (e.g. a cwd-follow re-root)
++        // would silently fall back to Tree's own hardcoded default.
++        tree.show_hidden = sidebar_state.show_hidden;
+         // Mirror the tree the user was already looking at: a sidebar docked
+         // into a brand-new preview tab starts with the same dirs expanded
+         // and the same row selected.
+@@ -311,13 +318,12 @@ impl App {
+                 .or_else(|_| std::env::var("HERDR_AA_FILETREE_ICONS"))
+                 .ok()
+                 .as_deref(),
+-            sidebar::load_state().icons,
++            sidebar_state.icons,
+         );
+         let pane_ctl = PaneCtl::from_env();
+         let last_layout_width = pane_ctl.as_ref().and_then(PaneCtl::layout_width);
+         // The other view ships in this same binary — always available.
+         let other_exe = std::env::current_exe().ok();
+-        let sidebar_state = sidebar::load_state();
+         set_color_theme(sidebar_state.color_theme);
+         let repos = if sidebar_state.git_deco {
+             Git::discover_all(&tree.root_path())
+@@ -722,6 +728,8 @@ impl App {
+             }
+             KeyCode::Char('.') => {
+                 self.tree.show_hidden = !self.tree.show_hidden;
++                self.sidebar_state =
++                    sidebar::update_state(|state| state.show_hidden = self.tree.show_hidden);
+                 self.rebuild();
+             }
+             KeyCode::Char('i') => self.set_theme(self.theme.toggled()),
+@@ -1278,6 +1286,8 @@ impl App {
+             }
+             Setting::HiddenFiles => {
+                 self.tree.show_hidden = !self.tree.show_hidden;
++                self.sidebar_state =
++                    sidebar::update_state(|state| state.show_hidden = self.tree.show_hidden);
+                 self.rebuild();
+             }
+             Setting::Hotkeys => {
+@@ -1574,7 +1584,7 @@ impl App {
+         }
+         let cwd_follower = std::rc::Rc::clone(&self.cwd_follower);
+         *self = App::new(root, cwd_follower);
+-        self.notice = Some(format!("folder: {}", self.tree.root_name()));
++        self.notice = Some(format!("folder: {}", self.tree.root_path().display()));
+     }
+ 
+     fn confirm_prompt(&mut self) {
+diff --git a/plugins/herdr-sidebar/src/state.rs b/plugins/herdr-sidebar/src/state.rs
+index bde4bae..031475c 100644
+--- a/plugins/herdr-sidebar/src/state.rs
++++ b/plugins/herdr-sidebar/src/state.rs
+@@ -209,6 +209,12 @@ pub struct State {
+     /// column target in the normal range and yields proportionally when the
+     /// tab becomes unusually narrow.
+     pub sidebar_width: u16,
++    /// Show dotfiles in the Explorer tree. Was previously a `Tree`-local
++    /// field that reset to its hardcoded default on every rebuild (e.g. a
++    /// cwd-follow re-root), so the toggle silently didn't survive the
++    /// thing it claimed to survive. Persisted here like every other
++    /// sidebar-wide preference.
++    pub show_hidden: bool,
+ }
+ 
+ impl Default for State {
+@@ -227,6 +233,7 @@ impl Default for State {
+             git_deco: true,
+             dock_right: false,
+             sidebar_width: DEFAULT_SIDEBAR_WIDTH,
++            show_hidden: true,
+         }
+     }
+ }
+@@ -363,7 +370,7 @@ fn write_state(path: &Path, state: State) {
+         None => String::new(),
+     };
+     let json = format!(
+-        "{{\"merged\":{},\"active\":\"{}\",\"hotkeys\":{},\"font_prompt\":{},\"auto_open\":{},\"strict_toggle\":{},\"focus_on_open\":{},\"follow_cwd\":{},\"git_deco\":{},\"dock_right\":{},\"sidebar_width\":{},\"colors\":\"{}\"{icons}}}",
++        "{{\"merged\":{},\"active\":\"{}\",\"hotkeys\":{},\"font_prompt\":{},\"auto_open\":{},\"strict_toggle\":{},\"focus_on_open\":{},\"follow_cwd\":{},\"git_deco\":{},\"dock_right\":{},\"sidebar_width\":{},\"colors\":\"{}\",\"show_hidden\":{}{icons}}}",
+         state.merged,
+         state.active.state_name(),
+         state.show_hotkeys,
+@@ -375,7 +382,8 @@ fn write_state(path: &Path, state: State) {
+         state.git_deco,
+         state.dock_right,
+         clamp_sidebar_width(state.sidebar_width),
+-        state.color_theme.label()
++        state.color_theme.label(),
++        state.show_hidden
+     );
+     let _ = std::fs::write(path, json);
+ }
+@@ -806,6 +814,10 @@ pub fn parse_state(json: &str) -> State {
+             .and_then(|v| u16::try_from(v).ok())
+             .map(clamp_sidebar_width)
+             .unwrap_or(default.sidebar_width),
++        show_hidden: value
++            .get("show_hidden")
++            .and_then(|v| v.as_bool())
++            .unwrap_or(default.show_hidden),
+     }
+ }
+ 
+@@ -944,8 +956,9 @@ mod tests {
+             git_deco: false,
+             dock_right: true,
+             sidebar_width: 44,
++            show_hidden: false,
+         };
+-        let json = "{\"merged\":true,\"active\":\"source-control\",\"hotkeys\":true,\"font_prompt\":true,\"auto_open\":false,\"strict_toggle\":true,\"focus_on_open\":false,\"follow_cwd\":false,\"git_deco\":false,\"dock_right\":true,\"sidebar_width\":44,\"colors\":\"terminal\",\"icons\":\"emoji\"}";
++        let json = "{\"merged\":true,\"active\":\"source-control\",\"hotkeys\":true,\"font_prompt\":true,\"auto_open\":false,\"strict_toggle\":true,\"focus_on_open\":false,\"follow_cwd\":false,\"git_deco\":false,\"dock_right\":true,\"sidebar_width\":44,\"colors\":\"terminal\",\"show_hidden\":false,\"icons\":\"emoji\"}";
+         assert_eq!(parse_state(json), state);
+         assert!(parse_state("\u{feff}{\"merged\":true}").merged);
+         // Files written before the flag existed keep auto-open AND the git
+@@ -967,6 +980,8 @@ mod tests {
+         assert_eq!(parse_state("{\"merged\":true}").sidebar_width, 32);
+         assert_eq!(parse_state("{\"sidebar_width\":1}").sidebar_width, 24);
+         assert_eq!(parse_state("{\"sidebar_width\":999}").sidebar_width, 80);
++        // Files written before this setting existed keep dotfiles shown.
++        assert!(parse_state("{\"merged\":true}").show_hidden);
+         assert_eq!(parse_state("garbage"), State::default());
+         assert_eq!(parse_state("{\"active\":\"bogus\"}"), State::default());
+     }

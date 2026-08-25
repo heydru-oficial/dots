@@ -233,19 +233,37 @@ if [[ "$SKIP_HERDR" -eq 0 ]]; then
       [[ "$line" == *:* ]] && subpath="${line#*:}"
       name="${repo#*/}"
       dest="$PLUGIN_ROOT/$name"
+      patched=0
       if [[ ! -d "$dest" ]]; then
         git clone --depth 1 "https://github.com/$repo" "$dest" >/dev/null 2>&1 \
           || { warn "clone failed for $repo, skipping"; continue; }
+        patch_file="$REPO_DIR/herdr/patches/$name.patch"
+        if [[ -f "$patch_file" ]]; then
+          if (cd "$dest" && git apply "$patch_file") 2>/dev/null; then
+            patched=1
+            log "applied local patch to $repo"
+          else
+            warn "patch for $repo didn't apply cleanly (upstream moved on?) — using it unpatched"
+          fi
+        fi
       fi
       manifest_dir="$dest"
       [[ -n "$subpath" ]] && manifest_dir="$dest/$subpath"
       herdr plugin link "$manifest_dir" >/dev/null 2>&1 \
         || { warn "link failed for $repo, skipping"; continue; }
-      for build_cmd in "sh scripts/fetch-or-build.sh" "bash herdr/install.sh" "cargo build --release"; do
-        if (cd "$manifest_dir" && eval "$build_cmd") >/dev/null 2>&1; then
-          break
-        fi
-      done
+      if [[ "$patched" -eq 1 ]]; then
+        # A patched checkout must be BUILT, not fetched — the plugin's own
+        # fetch-or-build.sh would happily download the unpatched official
+        # prebuilt binary and silently undo the patch.
+        (cd "$manifest_dir" && cargo build --release) >/dev/null 2>&1 \
+          || warn "building the patched $repo failed"
+      else
+        for build_cmd in "sh scripts/fetch-or-build.sh" "bash herdr/install.sh" "cargo build --release"; do
+          if (cd "$manifest_dir" && eval "$build_cmd") >/dev/null 2>&1; then
+            break
+          fi
+        done
+      fi
       log "linked $repo"
     done < "$REPO_DIR/herdr/plugins.txt"
 
