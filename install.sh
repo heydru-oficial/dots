@@ -13,6 +13,7 @@ set -euo pipefail
 SKIP_HERDR=0
 SKIP_NVIM=0
 SKIP_FONT=0
+SKIP_GHOSTTY=0
 SKIP_AGENTS=0
 ASSUME_YES=0
 for arg in "$@"; do
@@ -20,13 +21,15 @@ for arg in "$@"; do
     --skip-herdr) SKIP_HERDR=1 ;;
     --skip-nvim) SKIP_NVIM=1 ;;
     --skip-font) SKIP_FONT=1 ;;
+    --skip-ghostty) SKIP_GHOSTTY=1 ;;
     --skip-agents) SKIP_AGENTS=1 ;;
     --yes) ASSUME_YES=1 ;;
     -h|--help)
-      echo "Usage: $0 [--skip-herdr] [--skip-nvim] [--skip-font] [--skip-agents] [--yes]"
+      echo "Usage: $0 [--skip-herdr] [--skip-nvim] [--skip-font] [--skip-ghostty] [--skip-agents] [--yes]"
       echo "  --skip-herdr   don't touch herdr plugins (unvetted community registry)"
       echo "  --skip-nvim    don't install Neovim / kickstart.nvim"
-      echo "  --skip-font    don't touch Terminal.app's font setting (macOS only)"
+      echo "  --skip-font    don't install Hack Nerd Font Mono (macOS only)"
+      echo "  --skip-ghostty don't install Ghostty (macOS only)"
       echo "  --skip-agents  don't install Claude Code / Codex CLIs"
       echo "  --yes          don't ask before running the one sudo step on Linux"
       exit 0
@@ -111,6 +114,15 @@ fi
 if [[ "$OS" == "macos" ]]; then
   log "Installing starship, eza, ripgrep, fd via Homebrew"
   brew install starship eza ripgrep fd >/dev/null
+
+  if [[ "$SKIP_GHOSTTY" -eq 0 ]]; then
+    if [[ -d /Applications/Ghostty.app ]] || command -v ghostty >/dev/null; then
+      log "Ghostty already installed, leaving it alone"
+    else
+      log "Installing Ghostty as the local terminal layer"
+      brew install --cask ghostty >/dev/null
+    fi
+  fi
 else
   log "Installing starship, eza, ripgrep, fd via cargo (this compiles from source, a few minutes)"
   cargo install starship eza ripgrep fd-find --locked >/dev/null 2>&1 \
@@ -152,12 +164,6 @@ if [[ "$OS" == "macos" ]] || command -v zsh >/dev/null; then
 fi
 if [[ "$OS" == "linux" ]]; then
   append_once ~/.bashrc "$REPO_DIR/bashrc-snippet.sh"
-fi
-
-if [[ "$SKIP_FONT" -eq 0 && "$OS" == "macos" && "${TERM_PROGRAM:-}" == "Apple_Terminal" ]]; then
-  log "Pointing Terminal.app's Basic profile at HackNFM-Regular"
-  osascript -e 'tell application "Terminal" to set font name of settings set "Basic" to "HackNFM-Regular"' >/dev/null 2>&1 \
-    || warn "couldn't set Terminal.app font automatically; set it manually in Terminal > Settings > Profiles > Text"
 fi
 
 if [[ "$SKIP_NVIM" -eq 0 ]]; then
@@ -215,6 +221,10 @@ if [[ "$SKIP_NVIM" -eq 0 ]]; then
 fi
 
 if [[ "$SKIP_HERDR" -eq 0 ]]; then
+  if [[ "$OS" == "macos" ]] && ! command -v terminal-browser >/dev/null; then
+    log "Installing terminal-browser for browser panes inside herdr"
+    curl -fsSL https://terminal-browser.sh/install | bash
+  fi
   if ! command -v herdr >/dev/null; then
     log "Installing herdr (official installer, no sudo)"
     curl -fsSL https://herdr.dev/install.sh | sh
@@ -231,6 +241,10 @@ if [[ "$SKIP_HERDR" -eq 0 ]]; then
       repo="${line%%:*}"
       subpath=""
       [[ "$line" == *:* ]] && subpath="${line#*:}"
+      if [[ "$OS" != "macos" && "$repo" == "zenbu-labs/terminal-browser" ]]; then
+        log "skipping terminal-browser plugin on a headless Linux host"
+        continue
+      fi
       name="${repo#*/}"
       dest="$PLUGIN_ROOT/$name"
       patched=0
@@ -286,4 +300,8 @@ if [[ "$SKIP_HERDR" -eq 0 ]]; then
   fi
 fi
 
-log "Done. Open a new terminal window to see it all together."
+if [[ "$OS" == "macos" ]]; then
+  log "Done. Open Ghostty and run herdr to see it all together."
+else
+  log "Done. Open a new terminal window to see it all together."
+fi
