@@ -45,3 +45,9 @@ key = "prefix+i"
 type = "plugin_action"
 command = "flock.farm.open"
 description = "Open Flock Farm"
+
+[[keys.command]]
+key = "prefix+b"
+type = "plugin_action"
+command = "zenbu-labs.terminal-browser.open-split"
+description = "Open terminal-browser in a right split"

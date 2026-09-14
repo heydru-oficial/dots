@@ -13,3 +13,4 @@ ragamo/herdr-flock
 ChmaraX/herdr-nvim
 paulbkim-dev/vim-herdr-navigation
 osolmaz/ghzinga:plugins/herdr
+zenbu-labs/terminal-browser:herdr-plugin

@@ -8,7 +8,10 @@ My terminal setup, in one script. **macOS and Linux/Ubuntu** (including a bare V
 - [eza](https://github.com/eza-community/eza) for icon-based `ls`/`ll`/`la`/`lt`
 - [Neovim](https://neovim.io) + [kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim),
   the official minimal starter config
-- A Nerd Font ([Hack Nerd Font Mono](https://www.nerdfonts.com)) wired into Terminal.app — **macOS only**, see below
+- [Ghostty](https://ghostty.org) as the local terminal layer on macOS, with
+  [terminal-browser](https://github.com/zenbu-labs/terminal-browser) and Kitty
+  graphics support for browser panes inside herdr
+- A Nerd Font ([Hack Nerd Font Mono](https://www.nerdfonts.com)) — **macOS only**, see below
 - [Claude Code](https://claude.com/claude-code) and [Codex](https://github.com/openai/codex) CLIs
 - [herdr](https://herdr.dev) itself, plus a curated set of its plugins — see below
 
@@ -20,9 +23,14 @@ cd dots
 ./install.sh
 ```
 
-Flags: `--skip-herdr`, `--skip-nvim`, `--skip-font`, `--skip-agents`, `--yes`. Safe to
+Flags: `--skip-herdr`, `--skip-nvim`, `--skip-font`, `--skip-ghostty`,
+`--skip-agents`, `--yes`. Safe to
 re-run — every step checks for existing state before touching it, and it backs up your
 existing `~/.config/starship.toml` if one differs from the one in this repo.
+
+On macOS, launch `herdr` from Ghostty. Apple Terminal does not support the Kitty
+graphics protocol used by terminal-browser; unsupported graphics frames appear as
+raw `Ga=...` text instead of a browser. Ghostty works without extra configuration.
 
 ## macOS vs. Linux
 
@@ -44,19 +52,19 @@ Pass `--yes` to skip that confirmation for unattended/automated runs.
 Both `~/.zshrc` (if `zsh` is installed) and `~/.bashrc` get the alias/prompt block on
 Linux, since a bare Ubuntu box ships bash only.
 
-**Not installed on Linux:** the Nerd Font and the Terminal.app font-binding step. A
+**Not installed on Linux:** Ghostty and the Nerd Font. A
 remote box has no terminal of its own — the font needs to live on the machine you're
 *viewing* the terminal from (your laptop's SSH client), not the server. Install a Nerd
-Font locally from [nerdfonts.com](https://www.nerdfonts.com) and select it in whatever
-terminal app you SSH with.
+Font and a Kitty-graphics-capable terminal locally. This setup uses Ghostty on macOS.
 
 ## About the herdr plugins
 
 [herdr](https://herdr.dev) is a terminal/workspace manager built for running
 several AI coding agents (Claude Code, Codex, Copilot, etc.) side by side.
-`herdr/plugins.txt` lists nine community plugins this setup links in — a git
+`herdr/plugins.txt` lists ten community plugins this setup links in — a git
 sidebar, an nvim sidebar, an agent quota monitor, tab auto-naming, and a few
-others (one, `herdr-flock`, is pure novelty — pixel-art sheep for your agents).
+others, including terminal-browser (one, `herdr-flock`, is pure novelty — pixel-art
+sheep for your agents).
 
 **herdr's plugin registry is unvetted.** Anyone can publish a plugin by
 tagging a GitHub repo `herdr-plugin`; nothing in the list is reviewed by
